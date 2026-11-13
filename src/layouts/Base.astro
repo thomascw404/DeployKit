@@ -1,0 +1,135 @@
+---
+import '../styles/fonts.css';
+import '../styles/global.css';
+import site from '../../site.config';
+
+const { seo, theme, analytics, contact, business, concept } = site;
+const canonical = new URL(Astro.url.pathname, site.url).toString();
+const ogImage = seo.ogImage ? new URL(seo.ogImage, site.url).toString() : undefined;
+
+const fams = [...new Set([theme.fontSans, theme.fontDisplay, theme.fontMono].filter(Boolean))] as string[];
+const fontHref =
+  'https://fonts.googleapis.com/css2?' +
+  fams.map((f) => `family=${encodeURIComponent(f).replace(/%20/g, '+')}:wght@400..800`).join('&') +
+  '&display=swap';
+
+const vars = [
+  `--c-bg:${theme.bg}`,
+  `--c-surface:${theme.surface}`,
+  `--c-text:${theme.text}`,
+  `--c-muted:${theme.muted}`,
+  `--c-accent:${theme.accent}`,
+  `--c-accent-ink:${theme.accentInk}`,
+  `--c-accent-2:${theme.accent2 ?? theme.accent}`,
+  `--f-display:'${theme.fontDisplay ?? theme.fontSans}'`,
+  ...(theme.displayUppercase ? ['--display-case:uppercase', '--display-tracking:-0.01em'] : []),
+  `--f-sans:'${theme.fontSans}'`,
+  `--f-mono:'${theme.fontMono ?? theme.fontSans}'`,
+  `color-scheme:${theme.mode ?? 'dark'}`,
+  `--banner-h:${concept ? '2.25rem' : '0px'}`,
+].join(';');
+
+const org = {
+  '@context': 'https://schema.org',
+  '@type': seo.schemaType ?? 'Organization',
+  name: site.name,
+  url: site.url,
+  email: contact.email,
+  ...(contact.phone && { telephone: contact.phone }),
+  ...(seo.areaServed && { areaServed: seo.areaServed }),
+  ...(site.logo && { logo: new URL(site.logo, site.url).toString() }),
+  description: seo.description,
+  ...(business && {
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: business.street,
+      addressLocality: business.city,
+      addressRegion: business.region,
+      postalCode: business.postalCode,
+      addressCountry: business.country ?? 'US',
+    },
+    ...(business.hoursSpec && {
+      openingHoursSpecification: business.hoursSpec.map((h) => ({
+        '@type': 'OpeningHoursSpecification', dayOfWeek: h.days, opens: h.opens, closes: h.closes,
+      })),
+    }),
+    ...(business.areasServed && { areaServed: business.areasServed.map((a) => ({ '@type': 'City', name: a })) }),
+    ...(business.payment && { paymentAccepted: business.payment.join(', ') }),
+    ...(business.sameAs && { sameAs: business.sameAs }),
+    ...(business.mapUrl && { hasMap: business.mapUrl }),
+  }),
+};
+const faqLd =
+  site.faq && site.sections.includes('faq')
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: site.faq.items.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      }
+    : null;
+---
+<!doctype html>
+<html lang={site.lang ?? 'en'} style={vars}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{seo.title}</title>
+    <meta name="description" content={seo.description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="robots" content={concept ? 'noindex, nofollow' : 'index, follow'} />
+    <meta name="theme-color" content={theme.bg} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={seo.title} />
+    <meta property="og:description" content={seo.description} />
+    <meta property="og:url" content={canonical} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+
+    {theme.fontSource === 'google' && (
+      <Fragment>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="stylesheet" href={fontHref} />
+      </Fragment>
+    )}
+
+    <script type="application/ld+json" set:html={JSON.stringify(org)} />
+    {faqLd && <script type="application/ld+json" set:html={JSON.stringify(faqLd)} />}
+
+    {analytics?.cloudflareToken && (
+      <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token: analytics.cloudflareToken })} />
+    )}
+    {analytics?.plausibleDomain && (
+      <script defer data-domain={analytics.plausibleDomain} src="https://plausible.io/js/script.js" />
+    )}
+    {analytics?.ga4Id && (
+      <Fragment>
+        <script async src={`https://www.googletagmanager.com/gtag/js?id=${analytics.ga4Id}`} />
+        <script is:inline define:vars={{ id: analytics.ga4Id }}>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){ dataLayer.push(arguments); }
+          gtag('js', new Date()); gtag('config', id);
+        </script>
+      </Fragment>
+    )}
+  </head>
+  <body class="min-h-dvh overflow-x-clip">
+    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] btn-primary">Skip to content</a>
+    <slot />
+    <script>
+      // One observer for every [data-reveal] element on the page.
+      const io = new IntersectionObserver(
+        (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }),
+        { rootMargin: '0px 0px -10% 0px' },
+      );
+      document.querySelectorAll('[data-reveal]').forEach((el) => io.observe(el));
+    </script>
+  </body>
+</html>

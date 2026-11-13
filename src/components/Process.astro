@@ -1,0 +1,22 @@
+---
+import site from '../../site.config';
+const process = site.process!;
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+<section id="process" class="py-24 sm:py-32" aria-labelledby="process-heading">
+  <div class="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+    <div data-reveal>
+      <p class="kicker">{process.kicker}</p>
+      <h2 id="process-heading" class="mt-4 text-4xl font-bold sm:text-5xl">{process.heading}</h2>
+    </div>
+    <ol class="mt-14 grid gap-px overflow-hidden rounded-3xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
+      {process.steps.map((s, i) => (
+        <li class="bg-bg p-7" data-reveal style={`transition-delay:${i * 70}ms`}>
+          <span class="font-mono text-sm text-accent">{pad(i + 1)}</span>
+          <h3 class="mt-6 text-xl font-bold">{s.title}</h3>
+          <p class="mt-2 text-ink/70">{s.body}</p>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>

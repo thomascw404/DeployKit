@@ -1,0 +1,48 @@
+---
+// Address, hours, areas served, payment. Data comes from config.business so it
+// stays in sync with the LocalBusiness JSON-LD in Base.astro.
+import site from '../../site.config';
+import Icon from './Icon.astro';
+const loc = site.location!;
+const b = site.business!;
+const { contact } = site;
+const tel = contact.phone ? `tel:${contact.phone.replace(/[^+\d]/g, '')}` : null;
+const mapUrl = b.mapUrl ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${site.name} ${b.street} ${b.city} ${b.region}`)}`;
+---
+<section id="visit" class="border-t border-line bg-surface py-24 sm:py-32" aria-labelledby="visit-heading">
+  <div class="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+    <div data-reveal>
+      <p class="kicker">{loc.kicker}</p>
+      <h2 id="visit-heading" class="mt-4 text-4xl font-bold sm:text-5xl">{loc.heading}</h2>
+      {loc.note && <p class="mt-4 max-w-2xl text-lg text-ink/75">{loc.note}</p>}
+    </div>
+
+    <div class="mt-12 grid gap-5 md:grid-cols-3">
+      <div class="rounded-3xl border border-line bg-bg p-7" data-reveal>
+        <Icon name="map" class="text-accent" />
+        <h3 class="mt-4 text-xl font-bold">Address</h3>
+        <address class="mt-2 not-italic text-ink/80">{b.street}<br />{b.city}, {b.region} {b.postalCode}</address>
+        <a href={mapUrl} class="mt-5 inline-flex font-semibold text-accent underline-offset-4 hover:underline">Get directions →</a>
+        {b.areasServed && <p class="mt-5 text-sm text-ink/70">Serving {b.areasServed.join(', ').replace(/, ([^,]*)$/, ' and $1')}.</p>}
+      </div>
+
+      <div class="rounded-3xl border border-line bg-bg p-7" data-reveal>
+        <Icon name="clock" class="text-accent" />
+        <h3 class="mt-4 text-xl font-bold">Hours</h3>
+        <dl class="mt-2 divide-y divide-line">
+          {b.hours.map((h) => (
+            <div class="flex justify-between gap-4 py-2"><dt class="text-ink/80">{h.days}</dt><dd class="font-semibold">{h.time}</dd></div>
+          ))}
+        </dl>
+      </div>
+
+      <div class="rounded-3xl border border-line bg-bg p-7" data-reveal>
+        <Icon name="phone" class="text-accent" />
+        <h3 class="mt-4 text-xl font-bold">Contact</h3>
+        {tel && <a href={tel} class="mt-2 block text-2xl font-bold hover:text-accent">{contact.phone}</a>}
+        <a href={`mailto:${contact.email}`} class="mt-1 block break-all text-ink/80 hover:text-accent">{contact.email}</a>
+        {b.payment && <p class="mt-5 text-sm text-ink/70">We accept {b.payment.join(', ').replace(/, ([^,]*)$/, ' and $1')}.</p>}
+      </div>
+    </div>
+  </div>
+</section>

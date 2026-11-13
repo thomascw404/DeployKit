@@ -1,0 +1,13 @@
+---
+import site from '../../site.config';
+const mark = site.brandMark ?? 'dot';
+const label = site.shortName ?? site.name;
+---
+{site.logo ? <img src={site.logo} alt={site.name} class="h-8 w-auto" /> : (
+  <span class="inline-flex items-center gap-2">
+    {mark === 'stars' && (
+      <span class="flex text-accent-2" aria-hidden="true">{[0,1,2,3,4].map(() => <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 2.7 5.6 6.1.8-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1-4.4-4.3 6.1-.8z"/></svg>)}</span>
+    )}
+    <span>{label}{mark === 'dot' && <span class="text-accent">.</span>}</span>
+  </span>
+)}

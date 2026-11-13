@@ -1,0 +1,42 @@
+---
+// Coupons, specials, discounts. Only list offers the business actually runs.
+import site from '../../site.config';
+import Icon from './Icon.astro';
+const offers = site.offers!;
+---
+<section id="offers" class="py-20 sm:py-24" aria-labelledby="offers-heading">
+  <div class="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+    <div class="flex flex-wrap items-end justify-between gap-4" data-reveal>
+      <div>
+        <p class="kicker">{offers.kicker}</p>
+        <h2 id="offers-heading" class="mt-3 text-3xl font-bold sm:text-4xl">{offers.heading}</h2>
+      </div>
+    </div>
+    <ul class="mt-10 grid gap-5 lg:grid-cols-2">
+      {offers.items.map((o, i) => (
+        <li class:list={['offer relative overflow-hidden rounded-3xl p-8 text-accent-ink sm:p-10 sm:pr-36', i % 2 ? 'bg-accent-2' : 'bg-accent']} data-reveal>
+          <span class="absolute inset-y-0 right-0 hidden w-28 place-items-center opacity-90 sm:grid" aria-hidden="true">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 2.7 5.6 6.1.8-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1-4.4-4.3 6.1-.8z"/></svg>
+          </span>
+          <div class="flex items-center gap-2">
+            <Icon name="tag" size={18} />
+            {o.tag && <span class="font-mono text-xs font-semibold uppercase tracking-[0.16em]">{o.tag}</span>}
+          </div>
+          <h3 class="mt-4 text-3xl font-bold sm:text-4xl">{o.title}</h3>
+          <p class="mt-3 max-w-lg text-lg opacity-90">{o.body}</p>
+          {o.cta && <a href={o.cta.href} class:list={['mt-6 inline-flex min-h-11 items-center rounded-full bg-accent-ink px-5 font-semibold', i % 2 ? 'text-accent-2' : 'text-accent']}>{o.cta.label}</a>}
+          {o.terms && <p class="mt-6 max-w-xl text-xs opacity-80">{o.terms}</p>}
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  /* Perforated coupon edge */
+  .offer::after {
+    content: ''; position: absolute; top: 0; bottom: 0; right: 7rem; width: 0;
+    border-right: 2px dashed color-mix(in oklab, var(--c-accent-ink) 25%, transparent);
+  }
+  @media (max-width: 639px) { .offer::after { display: none; } }
+</style>

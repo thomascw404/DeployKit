@@ -1,0 +1,12 @@
+---
+import site from '../../site.config';
+const band = site.band!;
+---
+<section class="relative overflow-hidden bg-accent py-20 text-accent-ink sm:py-28" aria-label="Positioning">
+  <div class="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8" data-reveal>
+    <p class="band-head max-w-5xl font-display text-4xl font-bold leading-[1.02] tracking-tight sm:text-6xl">{band.heading}</p>
+    {band.tagline && <p class="mt-8 font-mono text-sm font-semibold uppercase tracking-[0.2em]">{band.tagline}</p>}
+  </div>
+</section>
+
+<style>.band-head { text-transform: var(--display-case, none); }</style>

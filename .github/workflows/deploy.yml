@@ -1,0 +1,32 @@
+# Deploy to Cloudflare Workers on every push to main.
+# Option B in FRAMEWORK.md §7 — use this OR Workers Builds (dashboard Git import), not both.
+# Repo secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID   (gh secret set NAME)
+# Without the secrets this workflow does nothing, so it is safe to leave in place.
+name: Deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        if: env.CLOUDFLARE_API_TOKEN != ''
+      - uses: actions/setup-node@v4
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+        if: env.CLOUDFLARE_API_TOKEN != ''
+      - run: npm run build:fast
+        if: env.CLOUDFLARE_API_TOKEN != ''
+      - run: npx wrangler deploy
+        if: env.CLOUDFLARE_API_TOKEN != ''
+      - run: echo "No CLOUDFLARE_API_TOKEN secret — skipping deploy (using Workers Builds or not set up yet)."
+        if: env.CLOUDFLARE_API_TOKEN == ''

@@ -1,0 +1,97 @@
+---
+import site from '../../site.config';
+import Art from './Art.astro';
+const { hero, theme } = site;
+const journey = hero.journey ?? [];
+const tex = theme.texture && theme.texture !== 'none' ? `tex-${theme.texture}` : '';
+// Split journey cards into two staggered columns.
+const left = journey.filter((_, i) => i % 2 === 0).map((c) => ({ c, i: journey.indexOf(c) }));
+const right = journey.filter((_, i) => i % 2 === 1).map((c) => ({ c, i: journey.indexOf(c) }));
+---
+<section id="top" class="relative isolate overflow-hidden pb-16 pt-[calc(var(--banner-h,0px)+7rem)] sm:pt-[calc(var(--banner-h,0px)+9rem)] lg:pb-24" aria-labelledby="hero-heading">
+  {tex && <div class:list={['absolute inset-0 -z-10 tex-fade', tex]} aria-hidden="true"></div>}
+  <div class="absolute -right-40 -top-40 -z-10 size-[36rem] rounded-full bg-accent/10 blur-3xl" aria-hidden="true"></div>
+
+  <div class="mx-auto grid max-w-7xl items-center gap-14 px-5 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:px-8">
+    <div>
+      <p class="kicker" data-reveal>{hero.eyebrow}</p>
+      <h1 id="hero-heading" class="mt-5 text-[clamp(2.75rem,6.2vw,4.75rem)] font-bold leading-[0.98]" data-reveal>
+        {hero.headline.map((l) => <span class="block">{l}</span>)}
+      </h1>
+      <p class="mt-6 max-w-xl text-lg text-ink/80" data-reveal>{hero.support}</p>
+      <div class="mt-8 flex flex-wrap gap-3" data-reveal>
+        <a href={hero.primary.href} class="btn-primary">{hero.primary.label}</a>
+        {hero.secondary && <a href={hero.secondary.href} class="btn-secondary">{hero.secondary.label}</a>}
+      </div>
+      {hero.rating && (
+        <a href={hero.rating.href ?? '#proof'} class="mt-6 inline-flex items-center gap-3 rounded-full border border-line px-4 py-2 text-sm transition hover:border-accent" data-reveal>
+          <span class="flex text-accent-2" aria-hidden="true">{[0,1,2,3,4].map(() => <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 2.7 5.6 6.1.8-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1-4.4-4.3 6.1-.8z"/></svg>)}</span>
+          <span><strong class="font-bold">{hero.rating.value}</strong> <span class="text-ink/70">{hero.rating.label}</span></span>
+        </a>
+      )}
+      {hero.chips && (
+        <ul class="mt-10 grid max-w-lg grid-cols-2 gap-x-6 gap-y-2 font-mono text-xs text-muted sm:grid-cols-3" data-reveal>
+          {hero.chips.map((c) => <li class="flex items-center gap-2"><span class="size-1.5 rounded-full bg-accent/70"></span>{c}</li>)}
+        </ul>
+      )}
+    </div>
+
+    {journey.length > 0 && (
+      <div class="journey relative" data-journey data-running="true">
+        {hero.journeyLabel && <p class="sr-only">{hero.journeyLabel}</p>}
+        <div class="grid min-h-[17rem] gap-4 sm:min-h-0 sm:grid-cols-2" aria-hidden="true">
+          <div class="space-y-5 pt-2">{left.map(({ c, i }) => <div data-step={i}><Art card={c} active={i === 0} /></div>)}</div>
+          <div class="space-y-5 sm:pt-14">{right.map(({ c, i }) => <div data-step={i}><Art card={c} /></div>)}</div>
+        </div>
+        <div class="mt-6 flex items-center gap-3">
+          <div class="flex flex-1 gap-1.5" aria-hidden="true">
+            {journey.map((_, i) => <span class="h-1 flex-1 overflow-hidden rounded-full bg-ink/10"><span class="journey-bar block h-full w-0 bg-accent" data-bar={i}></span></span>)}
+          </div>
+          <button type="button" class="journey-toggle font-mono text-[11px] uppercase tracking-wider text-muted hover:text-ink" aria-pressed="false">Pause motion</button>
+        </div>
+      </div>
+    )}
+  </div>
+</section>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-journey]');
+  if (root) {
+    const steps = [...root.querySelectorAll<HTMLElement>('[data-step]')].sort((a, b) => +a.dataset.step! - +b.dataset.step!);
+    const bars = [...root.querySelectorAll<HTMLElement>('[data-bar]')];
+    const toggle = root.querySelector<HTMLButtonElement>('.journey-toggle')!;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const DWELL = 2200;
+    let idx = 0, timer: number | undefined, running = !reduced;
+
+    const show = (n: number) => {
+      idx = n;
+      steps.forEach((s, i) => s.querySelector('.art')!.setAttribute('data-active', String(i === n)));
+      bars.forEach((b, i) => {
+        b.getAnimations().forEach((a) => a.cancel());
+        b.style.width = i < n ? '100%' : '0%';
+        if (i === n) {
+          if (running) b.animate([{ width: '0%' }, { width: '100%' }], { duration: DWELL, easing: 'linear', fill: 'forwards' });
+          else b.style.width = '100%';
+        }
+      });
+    };
+    const tick = () => { show((idx + 1) % steps.length); };
+    const start = () => { running = true; root.dataset.running = 'true'; show(idx); timer = window.setInterval(tick, DWELL); toggle.textContent = 'Pause motion'; toggle.setAttribute('aria-pressed', 'false'); };
+    const stop = () => { running = false; root.dataset.running = 'false'; clearInterval(timer); show(idx); toggle.textContent = 'Play motion'; toggle.setAttribute('aria-pressed', 'true'); };
+    toggle.addEventListener('click', () => (running ? stop() : start()));
+    // Only animate while on screen.
+    new IntersectionObserver(([e]) => { if (!e.isIntersecting) clearInterval(timer); else if (running) { clearInterval(timer); start(); } }).observe(root);
+    running ? start() : stop();
+  }
+</script>
+
+<style>
+  .journey :global(.art[data-active='false']) { transform: scale(.97); filter: grayscale(.9); box-shadow: none; }
+  /* Phones: show only the active card so the hero stays compact. */
+  @media (max-width: 639px) {
+    .journey [data-step]:has(:global(.art[data-active='false'])) { display: none; }
+    .journey .space-y-5 { margin: 0; }
+  }
+  .journey :global(.art[data-active='true']) { opacity: 1; transform: scale(1.02); box-shadow: 0 0 0 1px var(--c-accent), 0 30px 60px -20px rgb(0 0 0 / .7); }
+</style>

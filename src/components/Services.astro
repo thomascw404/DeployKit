@@ -1,0 +1,89 @@
+---
+import site from '../../site.config';
+import Art from './Art.astro';
+import Icon from './Icon.astro';
+const { services } = site;
+const layout = services.layout ?? 'scenes';
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+<section id="services" class="relative border-t border-line py-24 sm:py-32" aria-labelledby="services-heading">
+  <div class="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+    <div class="max-w-3xl" data-reveal>
+      <p class="kicker">{services.kicker}</p>
+      <h2 id="services-heading" class:list={['mt-4 text-4xl font-bold leading-[0.95] sm:text-6xl', layout === 'scenes' && 'uppercase']}>
+        {services.heading.map((l) => <span class="block">{l}</span>)}
+      </h2>
+      <p class="mt-6 text-lg text-ink/75">{services.intro}</p>
+    </div>
+
+    {layout === 'scenes' ? (
+      <ol class="mt-16 space-y-6 sm:mt-24">
+        {services.items.map((s, i) => (
+          <li class="scene grid items-center gap-8 rounded-3xl border border-line p-6 sm:p-10 lg:grid-cols-[1fr_minmax(0,26rem)]" data-scene data-focused="false">
+            <div>
+              <span class="font-mono text-sm text-accent">{pad(i + 1)}</span>
+              <h3 class="mt-3 text-3xl font-bold sm:text-4xl">{s.title}</h3>
+              <p class="mt-4 max-w-xl text-lg text-ink/75">{s.body}</p>
+            </div>
+            {s.art && <div aria-hidden="true" class="scene-art"><Art card={s.art} /></div>}
+          </li>
+        ))}
+      </ol>
+    ) : (
+      <ul class="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {services.items.map((s) => (
+          <li class="group rounded-3xl border border-line bg-surface p-7 transition hover:-translate-y-0.5 hover:border-accent" data-reveal>
+            {s.icon && <span class="grid size-12 place-items-center rounded-2xl bg-accent/10 text-accent"><Icon name={s.icon} size={26} /></span>}
+            <h3 class="mt-5 text-2xl font-bold">{s.title}</h3>
+            <p class="mt-2 text-ink/75">{s.body}</p>
+          </li>
+        ))}
+      </ul>
+    )}
+
+    {services.more && (
+      <div class="mt-10" data-reveal>
+        <p class="text-sm font-semibold text-ink/70">Also on the menu</p>
+        <ul class="mt-3 flex flex-wrap gap-2">
+          {services.more.map((m) => <li class="rounded-full border border-line px-3.5 py-1.5 text-sm">{m}</li>)}
+        </ul>
+      </div>
+    )}
+
+    {services.features && (
+      <ul class="mt-14 grid gap-px overflow-hidden rounded-3xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+        {services.features.map((f) => (
+          <li class="flex items-start gap-4 bg-bg p-6">
+            {f.icon && <Icon name={f.icon} class="mt-0.5 shrink-0 text-accent" />}
+            <div>
+              <p class="font-bold">{f.title}</p>
+              {f.body && <p class="mt-1 text-sm text-ink/70">{f.body}</p>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    )}
+
+    {services.note && <p class="mt-8 font-mono text-xs text-muted">{services.note}</p>}
+  </div>
+</section>
+
+<script>
+  // Highlight the scene nearest the viewport centre (scenes layout only).
+  const scenes = document.querySelectorAll<HTMLElement>('[data-scene]');
+  if (scenes.length) {
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => (e.target as HTMLElement).dataset.focused = String(e.isIntersecting)),
+      { rootMargin: '-40% 0px -40% 0px' },
+    );
+    scenes.forEach((s) => io.observe(s));
+  }
+</script>
+
+<style>
+  /* Unfocused scenes stay readable (no opacity fade, keeps WCAG contrast); only the art recedes. */
+  .scene { transition: background .5s, border-color .5s; }
+  .scene[data-focused='true'] { background: color-mix(in oklab, var(--c-surface) 80%, transparent); border-color: color-mix(in oklab, var(--c-accent) 35%, transparent); }
+  .scene-art { transition: transform .6s cubic-bezier(.2,.8,.2,1), filter .6s; transform: translateY(10px) rotate(-1deg) scale(.97); filter: grayscale(.85); }
+  .scene[data-focused='true'] .scene-art { transform: none; filter: none; }
+</style>

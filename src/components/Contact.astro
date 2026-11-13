@@ -1,0 +1,96 @@
+---
+import site from '../../site.config';
+import type { FormField } from '../config/types';
+const { closing, contact, name } = site;
+const endpoint = contact.formEndpoint ?? '';
+const fields: FormField[] = closing.fields ?? [
+  { name: 'name', label: 'Name', type: 'text', required: true, autocomplete: 'name', half: true },
+  { name: 'phone', label: 'Phone', type: 'tel', autocomplete: 'tel', half: true },
+  { name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'email' },
+  { name: 'message', label: 'What should work better?', type: 'textarea', required: true },
+];
+---
+<section id="contact" class="relative overflow-hidden border-t border-line py-24 sm:py-32" aria-labelledby="contact-heading">
+  <div class="absolute -left-40 bottom-0 -z-10 size-[30rem] rounded-full bg-accent/10 blur-3xl" aria-hidden="true"></div>
+  <div class="mx-auto grid max-w-7xl gap-12 px-5 sm:px-6 lg:grid-cols-2 lg:px-8">
+    <div data-reveal>
+      <h2 id="contact-heading" class="text-4xl font-bold leading-[1.02] sm:text-6xl">
+        {closing.heading.map((l) => <span class="block">{l}</span>)}
+      </h2>
+      {closing.body && <p class="mt-6 max-w-md text-lg text-ink/75">{closing.body}</p>}
+      <dl class="mt-10 space-y-3 font-mono text-sm">
+        <div><dt class="text-muted">Email</dt><dd><a class="text-ink hover:text-accent" href={`mailto:${contact.email}`}>{contact.email}</a></dd></div>
+        {contact.phone && <div><dt class="text-muted">Phone</dt><dd><a class="text-ink hover:text-accent" href={`tel:${contact.phone.replace(/[^+\d]/g, '')}`}>{contact.phone}</a></dd></div>}
+      </dl>
+      {contact.bookingUrl && <a href={contact.bookingUrl} class="btn-secondary mt-8">Or book a time directly</a>}
+    </div>
+
+    <form id="contact-form" class="glass space-y-4 rounded-3xl p-6 sm:p-8" data-endpoint={endpoint} data-email={contact.email} data-site={name} data-concept={site.concept ? "true" : undefined} novalidate data-reveal>
+      {Object.entries(contact.formHidden ?? {}).map(([k, v]) => <input type="hidden" name={k} value={v} />)}
+      <input type="text" name="company_website" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+      {closing.formTitle && <p class="text-xl font-bold">{closing.formTitle}</p>}
+      <div class="grid gap-4 sm:grid-cols-2">
+        {fields.map((f) => (
+          <label class:list={['block', !f.half && 'sm:col-span-2']}>
+            <span class="text-sm font-medium text-ink/80">{f.label}{!f.required && <span class="font-normal text-ink/70"> (optional)</span>}</span>
+            {f.type === 'textarea' ? (
+              <textarea name={f.name} required={f.required} rows="4" placeholder={f.placeholder} class="field resize-y"></textarea>
+            ) : f.type === 'select' ? (
+              <select name={f.name} required={f.required} class="field">
+                <option value="">Choose one</option>
+                {(f.options ?? []).map((o) => <option>{o}</option>)}
+              </select>
+            ) : (
+              <input name={f.name} type={f.type} required={f.required} autocomplete={f.autocomplete} placeholder={f.placeholder} class="field" />
+            )}
+          </label>
+        ))}
+      </div>
+      <button type="submit" class="btn-primary w-full">{closing.submitLabel ?? 'Send'}</button>
+      <p class="form-status min-h-6 text-sm" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<script define:vars={{ success: closing.success ?? 'Thanks — message received.' }} is:inline>
+  const form = document.getElementById('contact-form');
+  const status = form.querySelector('.form-status');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    const data = new FormData(form);
+    if (data.get('company_website')) return; // bot
+    data.delete('company_website');
+    if (form.dataset.concept) {
+      status.textContent = 'Concept preview: the form is wired up but not sending. It goes live with the real endpoint at launch.';
+      return;
+    }
+    const endpoint = form.dataset.endpoint;
+    if (!endpoint) {
+      // No backend configured: hand off to the visitor's mail app.
+      const body = [...data.entries()].filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n');
+      location.href = `mailto:${form.dataset.email}?subject=${encodeURIComponent(form.dataset.site + ' request from ' + (data.get('name') || 'website'))}&body=${encodeURIComponent(body)}`;
+      status.textContent = `Opening your email app… If nothing happens, email ${form.dataset.email}.`;
+      return;
+    }
+    const btn = form.querySelector('button[type=submit]');
+    btn.disabled = true; status.textContent = 'Sending…';
+    try {
+      const res = await fetch(endpoint, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error(String(res.status));
+      form.reset(); status.textContent = success;
+    } catch {
+      status.textContent = `Something went wrong. Please email ${form.dataset.email} directly.`;
+    } finally { btn.disabled = false; }
+  });
+</script>
+
+<style>
+  .field {
+    margin-top: .375rem; width: 100%; border-radius: .75rem; padding: .75rem 1rem;
+    background: color-mix(in oklab, var(--c-bg) 70%, transparent);
+    border: 1px solid var(--color-line); color: var(--c-text);
+    transition: border-color .2s;
+  }
+  .field:focus { outline: none; border-color: var(--c-accent); }
+</style>

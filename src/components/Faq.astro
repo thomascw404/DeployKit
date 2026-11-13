@@ -1,0 +1,41 @@
+---
+import site from '../../site.config';
+const faq = site.faq!;
+---
+<section id="faq" class="border-t border-line py-24 sm:py-32" aria-labelledby="faq-heading">
+  <div class="mx-auto grid max-w-7xl gap-12 px-5 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
+    <div data-reveal>
+      <p class="kicker">{faq.kicker}</p>
+      <h2 id="faq-heading" class="mt-4 text-4xl font-bold sm:text-5xl">{faq.heading}</h2>
+    </div>
+    <div class="divide-y divide-line border-y border-line">
+      {faq.items.map((f, i) => (
+        <div class="faq-item">
+          <h3>
+            <button type="button" class="flex w-full items-center justify-between gap-6 py-6 text-left text-lg font-semibold" aria-expanded="false" aria-controls={`faq-${i}`} id={`faq-q-${i}`}>
+              {f.q}
+              <span class="faq-icon relative size-4 shrink-0" aria-hidden="true"><span></span><span></span></span>
+            </button>
+          </h3>
+          <div id={`faq-${i}`} role="region" aria-labelledby={`faq-q-${i}`} class="faq-panel">
+            <div class="overflow-hidden"><p class="pb-6 pr-10 text-ink/75">{f.a}</p></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.faq-item button').forEach((btn) =>
+    btn.addEventListener('click', () => btn.setAttribute('aria-expanded', String(btn.getAttribute('aria-expanded') !== 'true'))),
+  );
+</script>
+
+<style>
+  .faq-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s ease; }
+  .faq-item:has([aria-expanded='true']) .faq-panel { grid-template-rows: 1fr; }
+  .faq-icon span { position: absolute; inset: 50% 0 auto; height: 2px; margin-top: -1px; background: var(--c-accent); transition: transform .3s; }
+  .faq-icon span:last-child { transform: rotate(90deg); }
+  [aria-expanded='true'] .faq-icon span:last-child { transform: rotate(0); }
+</style>

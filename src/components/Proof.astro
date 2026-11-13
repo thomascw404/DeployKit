@@ -1,0 +1,48 @@
+---
+// Stats and/or testimonials. Only use real numbers and real quotes with permission.
+import site from '../../site.config';
+const proof = site.proof!;
+const stats = proof.stats ?? [];
+const quotes = proof.quotes ?? [];
+---
+{(stats.length > 0 || quotes.length > 0) && (
+  <section id="proof" class="border-t border-line py-24 sm:py-32" aria-labelledby="proof-heading">
+    <div class="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+      <div data-reveal>
+        <p class="kicker">{proof.kicker}</p>
+        <h2 id="proof-heading" class="mt-4 max-w-3xl text-4xl font-bold sm:text-5xl">{proof.heading}</h2>
+      </div>
+      {stats.length > 0 && (
+        <dl class:list={['mt-14 grid gap-6', stats.length >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2']}>
+          {stats.map((s) => (
+            <div class="glass rounded-3xl p-8" data-reveal>
+              <dt class="text-ink/70">{s.label}</dt>
+              <dd class="order-first text-5xl font-bold tracking-tight text-accent">{s.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {quotes.length > 0 && (
+        <div class:list={['mt-10 grid gap-6', quotes.length > 1 && 'lg:grid-cols-2']}>
+          {quotes.map((q) => (
+            <figure class="rounded-3xl border border-line p-8" data-reveal>
+              {q.stars && <div class="mb-4 flex text-accent-2" role="img" aria-label="5 out of 5 stars">{[0,1,2,3,4].map(() => <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.8-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1-4.4-4.3 6.1-.8z"/></svg>)}</div>}
+              <blockquote class:list={['leading-relaxed', quotes.length > 1 ? 'text-xl' : 'max-w-4xl text-2xl']}>“{q.quote}”</blockquote>
+              <figcaption class="mt-6 text-sm text-muted"><strong class="text-ink">{q.name}</strong>{q.role && ` · ${q.role}`}</figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
+      {(proof.cta || proof.source) && (
+        <div class="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
+          {proof.cta && <a href={proof.cta.href} class="btn-secondary">{proof.cta.label}</a>}
+          {proof.source && <p class="text-xs text-ink/70">{proof.source}</p>}
+        </div>
+      )}
+    </div>
+  </section>
+)}
+
+<style>
+  dl > div { display: flex; flex-direction: column; gap: .5rem; }
+</style>

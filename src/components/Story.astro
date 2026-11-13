@@ -1,0 +1,35 @@
+---
+// Owner / company story with an optional pull quote. Use the owner's real words.
+import site from '../../site.config';
+import Icon from './Icon.astro';
+const story = site.story!;
+---
+<section id="about" class="border-t border-line py-24 sm:py-32" aria-labelledby="story-heading">
+  <div class="mx-auto grid max-w-7xl gap-12 px-5 sm:px-6 lg:grid-cols-2 lg:px-8">
+    <div data-reveal>
+      <p class="kicker">{story.kicker}</p>
+      <h2 id="story-heading" class="mt-4 text-4xl font-bold sm:text-5xl">{story.heading}</h2>
+      <div class="mt-6 space-y-4 text-lg text-ink/80">{story.body.map((p) => <p>{p}</p>)}</div>
+      {story.facts && (
+        <ul class="mt-8 grid gap-3 sm:grid-cols-2">
+          {story.facts.map((f) => (
+            <li class="flex items-center gap-3 font-semibold">
+              {f.icon && <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-accent/10 text-accent"><Icon name={f.icon} size={20} /></span>}
+              {f.title}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+    {story.quote && (
+      <figure class="relative self-center rounded-3xl bg-surface p-8 sm:p-12" data-reveal>
+        <span class="absolute -top-6 left-8 font-display text-8xl leading-none text-accent-2" aria-hidden="true">“</span>
+        <blockquote class="text-xl leading-relaxed sm:text-2xl">{story.quote.text}</blockquote>
+        <figcaption class="mt-8 flex items-center gap-3">
+          <span class="h-px w-8 bg-accent"></span>
+          <span><strong>{story.quote.name}</strong>{story.quote.role && <span class="text-ink/70">, {story.quote.role}</span>}</span>
+        </figcaption>
+      </figure>
+    )}
+  </div>
+</section>

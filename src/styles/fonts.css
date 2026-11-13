@@ -1,0 +1,5 @@
+/* Self-hosted fonts (theme.fontSource = 'self', the default).
+   Install the @fontsource packages for the families in site.config.ts and import them here.
+   Family names must match theme.fontSans / fontDisplay / fontMono exactly. */
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
