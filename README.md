@@ -4,15 +4,29 @@ A template, MCP server, and skill suite for fast, accessible marketing sites and
 
 Astro 7 + Tailwind v4 · static output · self-hosted fonts · Cloudflare Workers. Agents start at [`AGENTS.md`](AGENTS.md); the playbook is [`FRAMEWORK.md`](FRAMEWORK.md).
 
-## Install
+## Quick Share / One-Line Install
+
+Clones `DeployKit` to `~/DeployKit`, installs dependencies + Playwright Chromium, installs agent skills (`claude`, `cursor`, `antigravity`, `hermes`, `user`), configures the MCP server (with `.bak` backups), and verifies the setup with `npm run doctor`:
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/thomascw404/DeployKit/main/scripts/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/thomascw404/DeployKit/main/scripts/install.ps1 | iex
+```
+
+> **Non-interactive / custom flags:** pass `--dir <path>`, `--agents <claude|cursor|antigravity|hermes|user|all>`, `--skip-mcp`, or `--yes` (e.g. `curl -fsSL .../scripts/install.sh | bash -s -- --yes --agents antigravity` or `npm run setup -- --yes`).
+
+## Manual Install
 
 Requires Node 22.23+, Git, and the [GitHub CLI](https://cli.github.com).
 
 ```bash
-gh repo clone <owner>/deploykit && cd deploykit
-npm install
-npx playwright install chromium
-npm run doctor
+gh repo clone thomascw404/DeployKit && cd DeployKit
+npm run setup
 ```
 
 ### Agent Skills & MCP Server
@@ -40,6 +54,7 @@ To expose DeployKit as an MCP server (`stdio`), point your client at `scripts/mc
 
 | Command | Does |
 |---|---|
+| `npm run setup [-- --yes]` | Interactive or automated one-step setup (deps, browser, skills, MCP, doctor) |
 | `npm run doctor [-- --json]` | Check environment, browser, `gh`, and Cloudflare readiness |
 | `npm run teardown -- <url> [outDir] [--no-crawl]` | Capture a site + key subpages → `.teardown/<host>/` |
 | `npm run new -- <slug> [dir] [--link-deps]` | Scaffold a new site (`--link-deps` junctions `node_modules`) |

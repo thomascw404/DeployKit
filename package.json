@@ -19,7 +19,8 @@
     "cf:protect": "node scripts/cf-protect.mjs",
     "skills:install": "node scripts/install-skills.mjs",
     "validate": "node scripts/validate-config.mjs",
-    "mcp": "node scripts/mcp-server.mjs"
+    "mcp": "node scripts/mcp-server.mjs",
+    "setup": "node scripts/setup.mjs"
   },
   "bin": {
     "deploykit-mcp": "./scripts/mcp-server.mjs"
