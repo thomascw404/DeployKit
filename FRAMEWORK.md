@@ -9,12 +9,12 @@ The starter in this repo implements these patterns. Agents: start with `AGENTS.m
 
 | Phase | Output | Tooling | Done when |
 |---|---|---|---|
-| **0. Teardown** (optional) | Reference report: stack, tokens, sections, motion, gaps | Browser + `scripts/teardown.js`, `site-teardown` skill | You can name what to borrow and what to beat |
-| **1. Brief** | `briefs/<client>.md` from `BRIEF_TEMPLATE.md` | Interview / call notes | Audience, offer, primary CTA, proof, and 6–10 FAQs are written down |
-| **2. Config** | `site.config.ts` filled from the brief | Editor / Claude | `npm run build` passes with zero placeholder text |
-| **3. Customize** | Brand tokens, art cards, any new section | Tailwind, `Art.astro` kinds | Looks right at 390px and 1440px |
-| **4. QA** | QA checklist (§6) all green | Lighthouse, axe, Playwright screenshots, Rich Results test | No red items |
-| **5. Launch** | Live on domain, tracked, indexed | Cloudflare Pages, Search Console, analytics | Sitemap submitted, form test received |
+| **0. Teardown** (optional) | Reference report: stack, tokens, sections, subpages, motion, gaps | `npm run teardown` (`deploykit_teardown`), `site-teardown` skill | You can name what to borrow and what to beat |
+| **1. Brief** | `briefs/<client>.md` from `BRIEF_TEMPLATE.md` | Teardown `content.md` + public listings / interview | Sourced facts, verify list, audit, primary CTA, proof, and 6–10 FAQs are written down |
+| **2. Config** | `site.config.ts` filled from the brief | Editor / agent + `npm run validate` (`deploykit_validate_config`) | `npm run validate` and `npm run build` pass with zero placeholder text |
+| **3. Customize** | Brand tokens, art cards, icons, any new section | Tailwind, `Art.astro` kinds, `src/lib/icons.ts` | Looks right at 390px and 1440px |
+| **4. QA** | QA checklist (§6) all green | `npm run qa` (`deploykit_qa`), axe, Playwright screenshots, Lighthouse | No red items; mobile screenshot visually inspected |
+| **5. Pitch / Launch** | Pitch package or live domain, tracked, indexed | `npm run pitch` (`deploykit_pitch`), Cloudflare Workers, Access | Pitch package generated or sitemap submitted & form tested |
 | **6. Operate** | Monthly report, content updates | GSC / Ads / analytics MCPs | Report sent; backlog updated |
 
 Rule: **content before layout.** Never open the design phase with lorem ipsum — a polished shell with thin copy is the most common failure.
@@ -24,31 +24,35 @@ Rule: **content before layout.** Never open the design phase with lorem ipsum �
 ## 2. Architecture
 
 ```
-site.config.ts          ← one file per site: brand, copy, sections, SEO, contact, analytics
-src/config/types.ts     ← schema (typed; `astro check` catches missing fields)
-src/components/         ← one component per section + Art.astro (mock-UI cards)
-src/layouts/Base.astro  ← head: meta, OG, canonical, JSON-LD (Org + FAQPage), fonts, analytics
-src/pages/index.astro   ← section registry; renders config.sections in order
-worker/index.ts         ← optional Worker: static site + POST /api/contact (Resend)
-src/styles/fonts.css    ← per-site self-hosted font imports (@fontsource)
-AGENTS.md / CLAUDE.md   ← agent instructions (any runtime) / Claude pointer
-.agents/skills/         ← portable skills: site-teardown, deploykit-redesign, deploykit-qa, deploykit-deploy
-scripts/doctor.mjs      ← environment check with fixes                (npm run doctor)
-scripts/teardown.mjs    ← headless capture of a site                  (npm run teardown -- <url>)
-scripts/qa.mjs          ← QA gate + screenshots                       (npm run qa [-- --lighthouse])
-scripts/pitch.mjs       ← before/after, desktop shot, preview.html    (npm run pitch)
-scripts/cf-protect.mjs  ← Cloudflare Access: all Workers private      (npm run cf:protect)
-scripts/new-site.mjs    ← clone the starter for a new client      (npm run new -- <slug> [dir])
-scripts/sync-framework.mjs ← push framework upgrades into an existing site (npm run sync -- <dir>)
-scripts/single-file.mjs ← one self-contained HTML preview to email  (npm run single -- out.html)
-scripts/teardown.js     ← in-page probe (used by teardown.mjs; paste into any browser console)
-wrangler.jsonc          ← Cloudflare Workers static-assets deploy config
+site.config.ts               ← one file per site: brand, copy, sections, SEO, contact, analytics
+src/config/types.ts          ← schema (typed; `astro check` + `npm run validate` catch errors early)
+src/lib/icons.ts             ← 36 cross-industry 24x24 stroke icons for services and feature strips
+src/components/              ← one component per section + Art.astro (mock-UI cards)
+src/layouts/Base.astro       ← head: meta, OG, canonical, JSON-LD (Org + FAQPage), fonts, analytics
+src/pages/index.astro        ← section registry; renders config.sections in order
+worker/index.ts              ← optional Worker: static site + POST /api/contact (Resend)
+src/styles/fonts.css         ← per-site self-hosted font imports (@fontsource)
+AGENTS.md / CLAUDE.md        ← agent instructions (any runtime) / Claude pointer
+.agents/skills/              ← portable skills: site-teardown, deploykit-redesign, deploykit-qa, deploykit-deploy
+scripts/doctor.mjs           ← environment check with fixes                   (npm run doctor)
+scripts/teardown.mjs         ← headless capture + multi-page subpage crawler  (npm run teardown -- <url>)
+scripts/validate-config.mjs  ← pre-build config, contrast & SEO validator     (npm run validate)
+scripts/qa.mjs               ← QA gate + screenshots (supports --dir, --json) (npm run qa)
+scripts/pitch.mjs            ← before/after, desktop shot, preview.html       (npm run pitch)
+scripts/cf-protect.mjs       ← Cloudflare Access: all Workers private         (npm run cf:protect)
+scripts/new-site.mjs         ← clone starter (--link-deps for instant builds) (npm run new -- <slug>)
+scripts/sync-framework.mjs   ← push framework upgrades into an existing site  (npm run sync -- <dir>)
+scripts/single-file.mjs      ← one self-contained HTML preview to email       (npm run single -- out.html)
+scripts/install-skills.mjs   ← install skills across agent runtimes           (npm run skills:install)
+scripts/mcp-server.mjs       ← stdio MCP server with JSON + image attachments (npm run mcp)
+scripts/teardown.js          ← in-page probe (used by teardown.mjs; paste into any browser console)
+wrangler.jsonc               ← Cloudflare Workers static-assets deploy config
 ```
 
 - **Stack:** Astro 7 (static output, zero JS by default) + Tailwind v4 + small vanilla scripts. Builds to one self-contained `index.html` (CSS and JS inlined).
 - **Why not Next.js?** Same visual result, but Astro ships less JS for a brochure site and has no server to run. Switch to Next.js only when the site needs auth, a dashboard, or heavy app routes.
 - **Theming:** config colors → CSS variables on `<html>` → Tailwind utilities (`bg-accent`, `bg-accent-2`, `text-muted`, `border-line`). Dark and light modes both work; components tint with `ink/5`-style utilities, never hard-coded white. Optional display face (`fontDisplay`, `displayUppercase`) for headings.
-- **Fonts:** self-hosted by default (`theme.fontSource: 'self'`): install `@fontsource/*` packages and import them in `src/styles/fonts.css`. Family names in the config must match the package's declared family (variable fonts end in "Variable"). Set `fontSource: 'google'` to load from Google Fonts instead.
+- **Fonts:** self-hosted by default (`theme.fontSource: 'self'`): install `@fontsource/*` packages and import them in `src/styles/fonts.css`. Family names in the config must match the package's declared family (variable fonts end in "Variable"). Set `fontSource: 'google'` to load from Google Fonts instead. When scaffolding with `npm run new -- <slug> --link-deps`, standard fonts work immediately without running `npm install`.
 - **Upgrading client sites:** improve the starter, then `npm run sync -- ../client-site`. Sync never touches `site.config.ts`, `fonts.css`, `public/`, `briefs/` or `package.json`.
 
 ### Adding a section
@@ -72,7 +76,12 @@ wrangler.jsonc          ← Cloudflare Workers static-assets deploy config
 | `story` | Owner/company story + pull quote + quick facts | Owner-operated businesses; ownership changes |
 | `location` | Address + directions, hours, contact, payment; feeds LocalBusiness JSON-LD | Any business with a physical location |
 
-**Services layouts:** `scenes` (numbered rows with mock-UI art, agency style) or `grid` (icon cards + "also on the menu" chips + feature strip, local-business style). Icons: see `src/lib/icons.ts`.
+**Services layouts:** `scenes` (numbered rows with mock-UI art, agency style) or `grid` (icon cards + "also on the menu" chips + feature strip, local-business style).
+
+**Built-in icons (`src/lib/icons.ts` & `IconName` in `src/config/types.ts`):**
+- **General, trust & local:** `shield`, `clock`, `star`, `family`, `badge`, `map`, `phone`, `check`, `tag`, `coffee`, `shuttle`, `calendar`, `users`, `sparkles`
+- **Home, trades & medical/legal/professional:** `tooth` (dental/medical), `gavel` (legal/law), `home` (home services/roofing/real estate), `utensils` (restaurant/hospitality), `heart` (healthcare/wellness/nonprofit), `bolt` (electrical/energy/speed), `droplet` (plumbing/water/pool), `flame` (heating/HVAC/fitness), `leaf` (landscaping/eco/lawn), `code` (software/agency/tech), `chart` (analytics/growth/finance), `lock` (security/privacy/IT)
+- **Automotive & mechanical:** `wrench`, `engine`, `brake`, `suspension`, `tire`, `exhaust`, `oil`, `scan`, `battery`, `ac`
 
 **Site-wide options:** `mobileBar` (sticky Call / Book bar on phones), `business` (address, hours, `hoursSpec`, areas, payment, `sameAs` → JSON-LD), `brandMark` (`dot` / `stars` / `none` when there is no logo file), `concept` (see §8).
 
@@ -98,7 +107,7 @@ They are illustrative only; keep a note saying so on the page (honesty + legal).
 ## 4. Design rules
 
 - One accent color, used for CTAs, numbers, and the band — roughly ≤ 10% of the screen.
-- Check contrast: body text ≥ 4.5:1, accent-on-ink buttons ≥ 4.5:1 (yellow needs near-black text).
+- Check contrast: body text ≥ 4.5:1, accent-on-ink buttons ≥ 4.5:1 (yellow needs near-black text). Run `npm run validate` to check contrast ratios automatically before building.
 - Type: one sans (Geist, Inter, Manrope, Space Grotesk) + one mono for labels. Tight tracking on headings (−0.035em).
 - Radius scale: pills for buttons, 16–24px cards. Glass panels (`.glass`) only on dark themes.
 - Texture: `carbon`, `grid`, `dots`, or `none` — CSS only, faded by mask, never behind body copy.
@@ -114,12 +123,15 @@ They are illustrative only; keep a note saying so on the page (honesty + legal).
 
 ## 6. QA checklist
 
+Run `npm run validate [-- --dir <site-dir>]` for instant static validation of `site.config.ts` and `npm run qa [-- --lighthouse] [--dir <site-dir>]` (or the `deploykit_qa` MCP tool) for the full browser gate.
+
 **Content**
 - [ ] No placeholder text, example.com, or sample phone numbers (`grep -ri "example\|555" dist/`)
 - [ ] Every claim is true; illustrative visuals labelled
 - [ ] Spelling/grammar pass
 
 **Build**
+- [ ] Config validation passes: `npm run validate`
 - [ ] Fresh-clone install passes: `rm -rf node_modules && npm ci && npm run build:fast` (this is exactly what Cloudflare runs — a lock file out of sync with package.json fails the deploy)
 
 **Function**
@@ -139,7 +151,7 @@ They are illustrative only; keep a note saying so on the page (honesty + legal).
 - [ ] Reduced-motion mode checked
 
 **Visual**
-- [ ] Screenshots at 390 / 768 / 1440 widths reviewed (Playwright)
+- [ ] Screenshots at 390 / 768 / 1440 widths reviewed (Playwright / `.qa/mobile.png`)
 
 ## 7. Deploy & launch
 
@@ -152,7 +164,7 @@ Everything deploys from the user's own GitHub and Cloudflare accounts. Nothing i
 
 **Privacy (once per account)**
 1. Enable Zero Trust (one.dash.cloudflare.com, Free plan).
-2. Turn on Workers & Pages → **Protect all Workers** → All traffic, or run `npm run cf:protect [-- --emails … --domain …]`. For the script, the token also needs Access permissions to edit apps and policies and to read organizations and identity providers.
+2. Turn on Workers & Pages → **Protect all Workers** → All traffic, or run `npm run cf:protect [-- --emails … --domain …]` (or `deploykit_cf_protect`). For the script, the token also needs Access permissions to edit apps and policies and to read organizations and identity providers.
 3. Every Worker is now private. When a client site launches publicly, add a Worker-level bypass or move it to their account.
 
 **Launch (client signed)**
@@ -169,20 +181,21 @@ Everything deploys from the user's own GitHub and Cloudflare accounts. Nothing i
 A spec site is a free concept for a real business, used to win the project.
 - **Facts only.** Every claim comes from their current site or a public listing, with sources in the brief. Never invent reviews, stats, team members or prices. Put anything uncertain on a "verify with owner" list.
 - **Concept mode:** set `concept: { by, note, href }`. This adds a top banner, sets `noindex, nofollow`, makes robots.txt disallow everything, and turns form submits into a harmless notice so test entries never reach the real business.
-- **Never public.** Share as screenshots, a before/after image and a single-file HTML (`npm run pitch` produces all three). A hosted preview must sit behind Cloudflare Access (§7).
+- **Never public.** Share as screenshots, a before/after image and a single-file HTML (`npm run pitch [-- --dir <site-dir>]` produces all three and automatically reuses fresh `.qa/` screenshots). A hosted preview must sit behind Cloudflare Access (§7).
 - **The pitch package:**
   1. Before/after mobile image (their site vs. the concept, first screen).
   2. Single-file preview.
   3. One-page audit from the brief (problems → fixes → scores).
   4. A launch plan that protects their existing search rankings (redirect map).
 
-## 9. Agents, skills & tools
+## 9. Agents, skills & MCP tools
 
 | Need | Provided by |
 |---|---|
-| Instructions for any agent | `AGENTS.md` (Codex, Hermes, Cursor, Copilot…), `CLAUDE.md` → `AGENTS.md` |
-| Procedures | `.agents/skills/*/SKILL.md` (Agent Skills format; `npm run skills:install`) |
-| Site capture, QA, pitch | `npm run teardown`, `npm run qa`, `npm run pitch` (Playwright + axe; Lighthouse optional) |
+| Instructions for any agent | `AGENTS.md` (Codex, Hermes, Antigravity, Cursor, Copilot…), `CLAUDE.md` → `AGENTS.md` |
+| Portable Agent Skills | `.agents/skills/*/SKILL.md` (`npm run skills:install -- <claude\|hermes\|antigravity\|cursor\|user\|all>`) |
+| DeployKit MCP Server | `npm run mcp` (`node scripts/mcp-server.mjs`): exposes `deploykit_doctor`, `deploykit_teardown`, `deploykit_validate_config`, `deploykit_new_site`, `deploykit_qa`, `deploykit_pitch`, `deploykit_cf_protect` with JSON + image attachments |
+| Site capture, validation, QA, pitch | `npm run teardown`, `npm run validate`, `npm run qa`, `npm run pitch` (all support `--json`; `validate`, `qa`, `pitch` support `--dir <site-dir>`) |
 | GitHub | `gh` CLI (or a GitHub MCP/connector) |
 | Cloudflare | Dashboard, `wrangler`, or the Cloudflare API MCP (`https://mcp.cloudflare.com/mcp`) |
 | Live browsing of bot-protected sites | Any browser tool your runtime has; paste `scripts/teardown.js` into the page |

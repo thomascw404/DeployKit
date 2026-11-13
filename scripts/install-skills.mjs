@@ -1,27 +1,61 @@
 #!/usr/bin/env node
-// Usage: npm run skills:install -- <claude|hermes|user>
+// Usage: npm run skills:install -- <claude|hermes|user|antigravity|cursor|all>
 // The canonical skills live in .agents/skills/ (Agent Skills format). Codex and other
 // AGENTS.md-aware tools read that folder straight from the repo. This copies them where other runtimes look:
-//   claude  → ./.claude/skills/            (Claude Code, this project)
-//   hermes  → ~/.hermes/skills/deploykit/    (Hermes Agent; run `hermes skills reload` or restart after)
-//   user    → ~/.agents/skills/            (user-level, for any repo — Codex, Gemini CLI, Copilot)
+//   claude       → ./.claude/skills/                  (Claude Code, this project)
+//   cursor       → ./.cursor/skills/                  (Cursor, this project)
+//   hermes       → ~/.hermes/skills/deploykit/        (Hermes Agent; run `hermes skills reload` or restart after)
+//   antigravity  → ~/.gemini/antigravity-cli/skills/  (Google Antigravity CLI)
+//   user         → ~/.agents/skills/                  (user-level, for any repo — Codex, Gemini CLI, Copilot)
+//   all          → installs to both `claude` and `user`
 // Re-run after pulling DeployKit updates.
 import { cpSync, existsSync, readdirSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const targets = {
-  claude: resolve('.claude/skills'),
-  hermes: join(homedir(), '.hermes/skills/deploykit'),
-  user: join(homedir(), '.agents/skills'),
-};
-const which = process.argv[2];
-if (!targets[which]) {
-  console.error(`Usage: npm run skills:install -- <${Object.keys(targets).join('|')}>`);
-  process.exit(1);
+export function getTargets(cwd = process.cwd()) {
+  return {
+    claude: resolve(cwd, '.claude/skills'),
+    cursor: resolve(cwd, '.cursor/skills'),
+    hermes: join(homedir(), '.hermes/skills/deploykit'),
+    antigravity: join(homedir(), '.gemini/antigravity-cli/skills'),
+    user: join(homedir(), '.agents/skills'),
+  };
 }
-const src = resolve('.agents/skills');
-if (!existsSync(src)) { console.error('No .agents/skills folder here. Run from the DeployKit (or a client site) root.'); process.exit(1); }
-mkdirSync(targets[which], { recursive: true });
-for (const name of readdirSync(src)) cpSync(join(src, name), join(targets[which], name), { recursive: true });
-console.log(`Installed ${readdirSync(src).join(', ')} → ${targets[which]}`);
+
+export function runInstallSkills({ which, cwd = process.cwd() } = {}) {
+  const targets = getTargets(cwd);
+  const src = resolve(cwd, '.agents/skills');
+  if (!existsSync(src)) {
+    throw new Error('No .agents/skills folder here. Run from the DeployKit (or a client site) root.');
+  }
+  const keys = which === 'all' ? ['claude', 'user'] : [which];
+  if (!keys.every((k) => targets[k])) {
+    throw new Error(`Usage: npm run skills:install -- <${[...Object.keys(targets), 'all'].join('|')}>`);
+  }
+  const skills = readdirSync(src);
+  const installedTo = [];
+  for (const k of keys) {
+    const dest = targets[k];
+    mkdirSync(dest, { recursive: true });
+    for (const name of skills) {
+      cpSync(join(src, name), join(dest, name), { recursive: true });
+    }
+    installedTo.push(dest);
+  }
+  return { ok: true, skills, installedTo };
+}
+
+const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  try {
+    const res = runInstallSkills({ which: process.argv[2] });
+    for (const dest of res.installedTo) {
+      console.log(`Installed ${res.skills.join(', ')} → ${dest}`);
+    }
+  } catch (e) {
+    console.error(e.message);
+    process.exit(1);
+  }
+}

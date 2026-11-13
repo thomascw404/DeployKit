@@ -5,12 +5,12 @@ description: Put a DeployKit site in a private GitHub repo and deploy it to Clou
 
 # DeployKit deploy
 
-Works with any GitHub + Cloudflare account. Nothing here is tied to a specific user: the Worker name comes from `wrangler.jsonc` (`npm run new` sets it to the site slug) and the URL is `https://<name>.<the account's workers.dev subdomain>.workers.dev`.
+Works with any GitHub + Cloudflare account. Nothing here is tied to a specific user: the Worker name comes from `wrangler.jsonc` (`npm run new` / `deploykit_new_site` sets it to the site slug) and the URL is `https://<name>.<the account's workers.dev subdomain>.workers.dev`.
 
 ## 0. Preconditions
-- `npm run qa` passes.
-- `npm run doctor` shows gh authenticated. Cloudflare: either a dashboard login (option A) or `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (option B).
-- **Real business without sign-off → `concept` set AND Access on before the first deploy** (step 3 first if Access isn't set up on the account yet).
+- `npm run validate [-- --dir <site-dir>]` and `npm run qa [-- --dir <site-dir>]` (or MCP `deploykit_validate_config` + `deploykit_qa`) pass.
+- `npm run doctor [-- --json]` (or MCP `deploykit_doctor`) shows `gh` authenticated. Cloudflare: either a dashboard login (option A) or `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (option B).
+- **Real business without sign-off → `concept` set AND Access on before the first deploy** (run step 3 first if Access isn't set up on the account yet).
 
 ## 1. GitHub repo (private)
 ```bash
@@ -39,7 +39,7 @@ Token: Cloudflare dashboard → My Profile → API Tokens → "Edit Cloudflare W
 ## 3. Lock it down (Cloudflare Access)
 Once per account, the user enables Zero Trust (one.dash.cloudflare.com → Free plan). Then either:
 - Dashboard: Workers & Pages → **Protect all Workers** → All traffic → policy "Cloudflare account" (and/or emails / an email domain), or
-- `npm run cf:protect -- --emails partner@agency.com` (token needs Access edit permissions; see FRAMEWORK.md §7).
+- `npm run cf:protect -- --emails partner@agency.com [--domain agency.com]` (or MCP `deploykit_cf_protect`; token needs Access edit permissions; see `FRAMEWORK.md` §7).
 
 Verify while signed out (private window or `curl -sI`): the URL must redirect to a Cloudflare login, not serve the site.
 

@@ -64,7 +64,9 @@ export type SectionId =
 /** Built-in line icons for the services grid and feature lists. */
 export type IconName =
   | 'wrench' | 'engine' | 'brake' | 'suspension' | 'tire' | 'exhaust' | 'oil' | 'scan' | 'battery' | 'ac'
-  | 'shield' | 'shuttle' | 'coffee' | 'clock' | 'star' | 'family' | 'badge' | 'map' | 'phone' | 'check' | 'tag';
+  | 'shield' | 'shuttle' | 'coffee' | 'clock' | 'star' | 'family' | 'badge' | 'map' | 'phone' | 'check' | 'tag'
+  | 'tooth' | 'gavel' | 'home' | 'sparkles' | 'utensils' | 'heart' | 'bolt' | 'droplet'
+  | 'calendar' | 'code' | 'chart' | 'lock' | 'users' | 'flame' | 'leaf';
 
 export interface Feature { icon?: IconName; title: string; body?: string }
 
